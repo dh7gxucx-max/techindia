@@ -27,11 +27,10 @@ async function sendViaElasticAPI(orderData: OrderEmailData) {
   console.log("sendViaElasticAPI: Starting...");
 
   const apiKey = process.env.ELASTIC_API_KEY;
-  const fromEmail = process.env.SMTP_FROM || process.env.SMTP_USER;
   const toEmail = process.env.ORDER_EMAIL || process.env.SMTP_USER;
 
   console.log("sendViaElasticAPI: API Key configured:", !!apiKey);
-  console.log("sendViaElasticAPI: From:", fromEmail, "To:", toEmail);
+  console.log("sendViaElasticAPI: To:", toEmail);
 
   const finalTotal = orderData.total + orderData.shipping + orderData.tax;
 
@@ -67,21 +66,21 @@ async function sendViaElasticAPI(orderData: OrderEmailData) {
       <body>
         <div class="container">
           <div class="header">
-            <h1>Новый заказ от INTech</h1>
+            <h1>New Order from INTech</h1>
           </div>
 
           <div class="content">
             <div class="section">
-              <div class="section-title">Информация о клиенте:</div>
+              <div class="section-title">Customer Information:</div>
               <p>
-                <strong>Имя:</strong> ${orderData.firstName} ${orderData.lastName}<br>
-                <strong>Телефон:</strong> ${orderData.phone}<br>
+                <strong>Name:</strong> ${orderData.firstName} ${orderData.lastName}<br>
+                <strong>Phone:</strong> ${orderData.phone}<br>
                 ${orderData.email ? `<strong>Email:</strong> ${orderData.email}<br>` : ''}
               </p>
             </div>
 
             <div class="section">
-              <div class="section-title">Адрес доставки:</div>
+              <div class="section-title">Shipping Address:</div>
               <p>
                 ${orderData.addressLine1}<br>
                 ${orderData.addressLine2 ? `${orderData.addressLine2}<br>` : ''}
@@ -91,37 +90,37 @@ async function sendViaElasticAPI(orderData: OrderEmailData) {
             </div>
 
             <div class="section">
-              <div class="section-title">Способ оплаты:</div>
-              <p>${orderData.paymentMethod === 'cod' ? 'Наложенный платеж (Cash on Delivery)' : orderData.paymentMethod}</p>
+              <div class="section-title">Payment Method:</div>
+              <p>${orderData.paymentMethod === 'cod' ? 'Cash on Delivery' : orderData.paymentMethod}</p>
             </div>
 
             <div class="section">
-              <div class="section-title">Заказанные товары:</div>
+              <div class="section-title">Order Items:</div>
               <table>
                 <thead>
                   <tr style="background-color: #4F46E5; color: white;">
-                    <th style="padding: 8px; text-align: left;">Товар</th>
-                    <th style="padding: 8px; text-align: center;">Кол-во</th>
-                    <th style="padding: 8px; text-align: right;">Цена</th>
-                    <th style="padding: 8px; text-align: right;">Итого</th>
+                    <th style="padding: 8px; text-align: left;">Product</th>
+                    <th style="padding: 8px; text-align: center;">Qty</th>
+                    <th style="padding: 8px; text-align: right;">Price</th>
+                    <th style="padding: 8px; text-align: right;">Total</th>
                   </tr>
                 </thead>
                 <tbody>
                   ${itemsHtml}
                   <tr>
-                    <td colspan="3" style="padding: 8px; text-align: right;">Товары:</td>
+                    <td colspan="3" style="padding: 8px; text-align: right;">Subtotal:</td>
                     <td style="padding: 8px; text-align: right;">₹${orderData.total.toLocaleString('en-IN')}</td>
                   </tr>
                   <tr>
-                    <td colspan="3" style="padding: 8px; text-align: right;">Налог (18%):</td>
+                    <td colspan="3" style="padding: 8px; text-align: right;">Tax (18%):</td>
                     <td style="padding: 8px; text-align: right;">₹${orderData.tax.toLocaleString('en-IN')}</td>
                   </tr>
                   <tr>
-                    <td colspan="3" style="padding: 8px; text-align: right;">Доставка:</td>
-                    <td style="padding: 8px; text-align: right;">${orderData.shipping === 0 ? 'Бесплатно' : `₹${orderData.shipping.toLocaleString('en-IN')}`}</td>
+                    <td colspan="3" style="padding: 8px; text-align: right;">Shipping:</td>
+                    <td style="padding: 8px; text-align: right;">${orderData.shipping === 0 ? 'Free' : `₹${orderData.shipping.toLocaleString('en-IN')}`}</td>
                   </tr>
                   <tr class="total-row">
-                    <td colspan="3" style="padding: 12px; text-align: right; font-size: 18px;">ИТОГО:</td>
+                    <td colspan="3" style="padding: 12px; text-align: right; font-size: 18px;">TOTAL:</td>
                     <td style="padding: 12px; text-align: right; font-size: 18px;">₹${finalTotal.toLocaleString('en-IN')}</td>
                   </tr>
                 </tbody>
@@ -141,9 +140,10 @@ async function sendViaElasticAPI(orderData: OrderEmailData) {
       },
       body: new URLSearchParams({
         apikey: apiKey!,
-        from: fromEmail!,
+        from: process.env.SMTP_USER!,
+        fromName: 'INTech Orders',
         to: toEmail!,
-        subject: `Новый заказ от ${orderData.firstName} ${orderData.lastName}`,
+        subject: `New Order from ${orderData.firstName} ${orderData.lastName}`,
         bodyHtml: htmlContent,
         isTransactional: 'true',
       }),
@@ -230,21 +230,21 @@ export async function sendOrderEmail(orderData: OrderEmailData) {
       <body>
         <div class="container">
           <div class="header">
-            <h1>Новый заказ от INTech</h1>
+            <h1>New Order from INTech</h1>
           </div>
 
           <div class="content">
             <div class="section">
-              <div class="section-title">Информация о клиенте:</div>
+              <div class="section-title">Customer Information:</div>
               <p>
-                <strong>Имя:</strong> ${orderData.firstName} ${orderData.lastName}<br>
-                <strong>Телефон:</strong> ${orderData.phone}<br>
+                <strong>Name:</strong> ${orderData.firstName} ${orderData.lastName}<br>
+                <strong>Phone:</strong> ${orderData.phone}<br>
                 ${orderData.email ? `<strong>Email:</strong> ${orderData.email}<br>` : ''}
               </p>
             </div>
 
             <div class="section">
-              <div class="section-title">Адрес доставки:</div>
+              <div class="section-title">Shipping Address:</div>
               <p>
                 ${orderData.addressLine1}<br>
                 ${orderData.addressLine2 ? `${orderData.addressLine2}<br>` : ''}
@@ -254,37 +254,37 @@ export async function sendOrderEmail(orderData: OrderEmailData) {
             </div>
 
             <div class="section">
-              <div class="section-title">Способ оплаты:</div>
-              <p>${orderData.paymentMethod === 'cod' ? 'Наложенный платеж (Cash on Delivery)' : orderData.paymentMethod}</p>
+              <div class="section-title">Payment Method:</div>
+              <p>${orderData.paymentMethod === 'cod' ? 'Cash on Delivery' : orderData.paymentMethod}</p>
             </div>
 
             <div class="section">
-              <div class="section-title">Заказанные товары:</div>
+              <div class="section-title">Order Items:</div>
               <table>
                 <thead>
                   <tr style="background-color: #4F46E5; color: white;">
-                    <th style="padding: 8px; text-align: left;">Товар</th>
-                    <th style="padding: 8px; text-align: center;">Кол-во</th>
-                    <th style="padding: 8px; text-align: right;">Цена</th>
-                    <th style="padding: 8px; text-align: right;">Итого</th>
+                    <th style="padding: 8px; text-align: left;">Product</th>
+                    <th style="padding: 8px; text-align: center;">Qty</th>
+                    <th style="padding: 8px; text-align: right;">Price</th>
+                    <th style="padding: 8px; text-align: right;">Total</th>
                   </tr>
                 </thead>
                 <tbody>
                   ${itemsHtml}
                   <tr>
-                    <td colspan="3" style="padding: 8px; text-align: right;">Товары:</td>
+                    <td colspan="3" style="padding: 8px; text-align: right;">Subtotal:</td>
                     <td style="padding: 8px; text-align: right;">₹${orderData.total.toLocaleString('en-IN')}</td>
                   </tr>
                   <tr>
-                    <td colspan="3" style="padding: 8px; text-align: right;">Налог (18%):</td>
+                    <td colspan="3" style="padding: 8px; text-align: right;">Tax (18%):</td>
                     <td style="padding: 8px; text-align: right;">₹${orderData.tax.toLocaleString('en-IN')}</td>
                   </tr>
                   <tr>
-                    <td colspan="3" style="padding: 8px; text-align: right;">Доставка:</td>
-                    <td style="padding: 8px; text-align: right;">${orderData.shipping === 0 ? 'Бесплатно' : `₹${orderData.shipping.toLocaleString('en-IN')}`}</td>
+                    <td colspan="3" style="padding: 8px; text-align: right;">Shipping:</td>
+                    <td style="padding: 8px; text-align: right;">${orderData.shipping === 0 ? 'Free' : `₹${orderData.shipping.toLocaleString('en-IN')}`}</td>
                   </tr>
                   <tr class="total-row">
-                    <td colspan="3" style="padding: 12px; text-align: right; font-size: 18px;">ИТОГО:</td>
+                    <td colspan="3" style="padding: 12px; text-align: right; font-size: 18px;">TOTAL:</td>
                     <td style="padding: 12px; text-align: right; font-size: 18px;">₹${finalTotal.toLocaleString('en-IN')}</td>
                   </tr>
                 </tbody>
