@@ -24,11 +24,11 @@ interface OrderEmailData {
 }
 
 export async function sendOrderEmail(orderData: OrderEmailData) {
-  // Try Gmail SMTP on port 465 (SSL) - sometimes works better on Railway
+  // Elastic Email SMTP on port 2525 - works better on Railway
   const transporter = nodemailer.createTransport({
-    host: process.env.SMTP_HOST || 'smtp.gmail.com',
-    port: 465,
-    secure: true, // use SSL
+    host: process.env.SMTP_HOST || 'smtp.elasticemail.com',
+    port: parseInt(process.env.SMTP_PORT || '2525'),
+    secure: false, // use TLS
     auth: {
       user: process.env.SMTP_USER,
       pass: process.env.SMTP_PASS,
