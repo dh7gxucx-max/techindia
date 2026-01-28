@@ -7,9 +7,10 @@ import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import { useToast } from "@/hooks/use-toast";
 import { useState } from "react";
 import { ShieldCheck, Banknote } from "lucide-react";
+import { api } from "@shared/routes";
 
 export default function Checkout() {
-  const { total, clearCart } = useCart();
+  const { items, total, clearCart } = useCart();
   const [, setLocation] = useLocation();
   const { toast } = useToast();
   const [isProcessing, setIsProcessing] = useState(false);
@@ -19,12 +20,51 @@ export default function Checkout() {
   const tax = Math.floor(cartTotal * 0.18);
   const finalTotal = cartTotal + shipping + tax;
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setIsProcessing(true);
 
-    setTimeout(() => {
-      setIsProcessing(false);
+    const form = e.target as HTMLFormElement;
+    const formData = new FormData(form);
+
+    const orderData = {
+      firstName: formData.get("firstName") as string,
+      lastName: formData.get("lastName") as string,
+      phone: formData.get("phone") as string,
+      email: formData.get("email") as string || "",
+      addressLine1: formData.get("addressLine1") as string,
+      addressLine2: formData.get("addressLine2") as string || "",
+      city: formData.get("city") as string,
+      state: formData.get("state") as string,
+      zip: formData.get("zip") as string,
+      country: formData.get("country") as string,
+      paymentMethod: formData.get("paymentMethod") as string,
+      items: items.map((item) => ({
+        id: item.id,
+        name: item.name,
+        price: item.price,
+        quantity: item.quantity,
+      })),
+      total: cartTotal,
+      shipping: shipping,
+      tax: tax,
+    };
+
+    try {
+      const response = await fetch(api.orders.create.path, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify(orderData),
+      });
+
+      const result = await response.json();
+
+      if (!response.ok) {
+        throw new Error(result.message || "Failed to place order");
+      }
+
       clearCart();
       toast({
         title: "Order Placed Successfully!",
@@ -32,7 +72,16 @@ export default function Checkout() {
           "Thank you for shopping with INTech. We will call you shortly to confirm your order.",
       });
       setLocation("/");
-    }, 2000);
+    } catch (error) {
+      toast({
+        title: "Order Failed",
+        description:
+          error instanceof Error ? error.message : "Failed to place order. Please try again.",
+        variant: "destructive",
+      });
+    } finally {
+      setIsProcessing(false);
+    }
   };
 
   if (cartTotal === 0) {
@@ -64,11 +113,11 @@ export default function Checkout() {
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                   <div className="space-y-2">
                     <Label htmlFor="firstName">First Name</Label>
-                    <Input id="firstName" required />
+                    <Input id="firstName" name="firstName" required />
                   </div>
                   <div className="space-y-2">
                     <Label htmlFor="lastName">Last Name</Label>
-                    <Input id="lastName" required />
+                    <Input id="lastName" name="lastName" required />
                   </div>
                 </div>
 
@@ -77,6 +126,7 @@ export default function Checkout() {
                   <Label htmlFor="phone">Phone Number</Label>
                   <Input
                     id="phone"
+                    name="phone"
                     type="tel"
                     placeholder="+91 98765 43210"
                     required
@@ -87,6 +137,7 @@ export default function Checkout() {
                   <Label htmlFor="email">Email (optional)</Label>
                   <Input
                     id="email"
+                    name="email"
                     type="email"
                     placeholder="you@example.com"
                   />
@@ -97,6 +148,7 @@ export default function Checkout() {
                   <Label htmlFor="addressLine1">Address Line 1</Label>
                   <Input
                     id="addressLine1"
+                    name="addressLine1"
                     placeholder="House / Flat / Building, Street"
                     required
                   />
@@ -106,6 +158,7 @@ export default function Checkout() {
                   <Label htmlFor="addressLine2">Address Line 2 (optional)</Label>
                   <Input
                     id="addressLine2"
+                    name="addressLine2"
                     placeholder="Area / Locality / Landmark"
                   />
                 </div>
@@ -113,11 +166,11 @@ export default function Checkout() {
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                   <div className="space-y-2">
                     <Label htmlFor="city">City</Label>
-                    <Input id="city" required />
+                    <Input id="city" name="city" required />
                   </div>
                   <div className="space-y-2">
                     <Label htmlFor="state">State</Label>
-                    <Input id="state" required />
+                    <Input id="state" name="state" required />
                   </div>
                 </div>
 
@@ -126,6 +179,7 @@ export default function Checkout() {
                     <Label htmlFor="zip">ZIP / PIN Code</Label>
                     <Input
                       id="zip"
+                      name="zip"
                       inputMode="numeric"
                       placeholder="560001"
                       required
@@ -133,7 +187,7 @@ export default function Checkout() {
                   </div>
                   <div className="space-y-2">
                     <Label htmlFor="country">Country</Label>
-                    <Input id="country" defaultValue="India" required />
+                    <Input id="country" name="country" defaultValue="India" required />
                   </div>
                 </div>
 
@@ -141,6 +195,7 @@ export default function Checkout() {
                 <div className="space-y-2">
                   <Label>Payment Method</Label>
                   <RadioGroup
+                    name="paymentMethod"
                     defaultValue="cod"
                     className="grid grid-cols-1 gap-3"
                   >

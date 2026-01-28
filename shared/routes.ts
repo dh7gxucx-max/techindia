@@ -14,6 +14,29 @@ export const errorSchemas = {
   }),
 };
 
+export const orderSchema = z.object({
+  firstName: z.string().min(1, "First name is required"),
+  lastName: z.string().min(1, "Last name is required"),
+  phone: z.string().min(10, "Valid phone number is required"),
+  email: z.string().email("Valid email is required").optional().or(z.literal('')),
+  addressLine1: z.string().min(1, "Address is required"),
+  addressLine2: z.string().optional(),
+  city: z.string().min(1, "City is required"),
+  state: z.string().min(1, "State is required"),
+  zip: z.string().min(1, "ZIP code is required"),
+  country: z.string().min(1, "Country is required"),
+  paymentMethod: z.string().default("cod"),
+  items: z.array(z.object({
+    id: z.number(),
+    name: z.string(),
+    price: z.number(),
+    quantity: z.number(),
+  })),
+  total: z.number(),
+  shipping: z.number(),
+  tax: z.number(),
+});
+
 export const api = {
   products: {
     list: {
@@ -45,6 +68,22 @@ export const api = {
             201: z.object({ message: z.string() })
         }
     }
+  },
+  orders: {
+    create: {
+      method: 'POST' as const,
+      path: '/api/orders',
+      input: orderSchema,
+      responses: {
+        200: z.object({
+          success: z.boolean(),
+          message: z.string(),
+          orderId: z.string().optional()
+        }),
+        400: errorSchemas.validation,
+        500: errorSchemas.internal,
+      },
+    },
   },
 };
 

@@ -1,9 +1,10 @@
 import type { Express } from "express";
 import { createServer, type Server } from "http";
 import { storage } from "./storage";
-import { api } from "@shared/routes";
+import { api, orderSchema } from "@shared/routes";
 import { setupAuth } from "./replit_integrations/auth";
 import { z } from "zod";
+import { sendOrderEmail } from "./email";
 
 export async function registerRoutes(
   httpServer: Server,
@@ -72,6 +73,34 @@ export async function registerRoutes(
   app.post(api.products.seed.path, async (req, res) => {
     await seedDatabase();
     res.status(201).json({ message: "Database seeded" });
+  });
+
+  // CREATE ORDER
+  app.post(api.orders.create.path, async (req, res) => {
+    try {
+      const orderData = orderSchema.parse(req.body);
+
+      await sendOrderEmail(orderData);
+
+      res.json({
+        success: true,
+        message: "Order placed successfully",
+        orderId: `ORD-${Date.now()}`,
+      });
+    } catch (error) {
+      console.error("Error processing order:", error);
+
+      if (error instanceof z.ZodError) {
+        return res.status(400).json({
+          message: "Validation error",
+          field: error.errors[0]?.path.join('.'),
+        });
+      }
+
+      res.status(500).json({
+        message: "Failed to process order. Please try again.",
+      });
+    }
   });
 
   // ... остальной код seedDatabase() оставляй как есть
