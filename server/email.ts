@@ -24,14 +24,14 @@ interface OrderEmailData {
 }
 
 export async function sendOrderEmail(orderData: OrderEmailData) {
-  // SendGrid configuration (works better with Railway)
+  // Brevo (Sendinblue) SMTP configuration
   const transporter = nodemailer.createTransport({
-    host: 'smtp.sendgrid.net',
+    host: 'smtp-relay.brevo.com',
     port: 587,
     secure: false,
     auth: {
-      user: 'apikey',
-      pass: process.env.SENDGRID_API_KEY || process.env.SMTP_PASS,
+      user: process.env.BREVO_SMTP_USER || process.env.SMTP_USER,
+      pass: process.env.BREVO_API_KEY || process.env.SMTP_PASS,
     },
   });
 
