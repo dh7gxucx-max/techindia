@@ -24,13 +24,14 @@ interface OrderEmailData {
 }
 
 export async function sendOrderEmail(orderData: OrderEmailData) {
+  // SendGrid configuration (works better with Railway)
   const transporter = nodemailer.createTransport({
-    host: process.env.SMTP_HOST || 'smtp.gmail.com',
-    port: parseInt(process.env.SMTP_PORT || '587'),
+    host: 'smtp.sendgrid.net',
+    port: 587,
     secure: false,
     auth: {
-      user: process.env.SMTP_USER,
-      pass: process.env.SMTP_PASS,
+      user: 'apikey',
+      pass: process.env.SENDGRID_API_KEY || process.env.SMTP_PASS,
     },
   });
 
