@@ -78,6 +78,7 @@ export async function registerRoutes(
   // CREATE ORDER
   app.post(api.orders.create.path, async (req, res) => {
     try {
+      console.log("Received order data:", JSON.stringify(req.body, null, 2));
       const orderData = orderSchema.parse(req.body);
 
       await sendOrderEmail(orderData);
@@ -91,9 +92,12 @@ export async function registerRoutes(
       console.error("Error processing order:", error);
 
       if (error instanceof z.ZodError) {
+        const errorDetails = error.errors.map(err => `${err.path.join('.')}: ${err.message}`).join(', ');
+        console.error("Validation errors:", errorDetails);
         return res.status(400).json({
-          message: "Validation error",
+          message: `Validation error: ${errorDetails}`,
           field: error.errors[0]?.path.join('.'),
+          errors: error.errors,
         });
       }
 
