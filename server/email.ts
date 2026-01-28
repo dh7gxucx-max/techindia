@@ -1,4 +1,4 @@
-import nodemailer from 'nodemailer';
+import { Resend } from 'resend';
 
 interface OrderEmailData {
   firstName: string;
@@ -24,16 +24,7 @@ interface OrderEmailData {
 }
 
 export async function sendOrderEmail(orderData: OrderEmailData) {
-  // SendGrid configuration (works better with Railway)
-  const transporter = nodemailer.createTransport({
-    host: 'smtp.sendgrid.net',
-    port: 587,
-    secure: false,
-    auth: {
-      user: 'apikey',
-      pass: process.env.SENDGRID_API_KEY || process.env.SMTP_PASS,
-    },
-  });
+  const resend = new Resend(process.env.RESEND_API_KEY);
 
   const finalTotal = orderData.total + orderData.shipping + orderData.tax;
 
@@ -135,12 +126,10 @@ export async function sendOrderEmail(orderData: OrderEmailData) {
     </html>
   `;
 
-  const mailOptions = {
-    from: process.env.SMTP_FROM || process.env.SMTP_USER,
-    to: process.env.ORDER_EMAIL || process.env.SMTP_USER,
+  await resend.emails.send({
+    from: 'orders@intechshop.in',
+    to: process.env.ORDER_EMAIL || 'dh7gxucx@gmail.com',
     subject: `Новый заказ от ${orderData.firstName} ${orderData.lastName}`,
     html: htmlContent,
-  };
-
-  await transporter.sendMail(mailOptions);
+  });
 }
