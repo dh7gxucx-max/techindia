@@ -24,14 +24,14 @@ interface OrderEmailData {
 }
 
 export async function sendOrderEmail(orderData: OrderEmailData) {
-  // Brevo (Sendinblue) SMTP configuration
+  // Try Gmail SMTP on port 465 (SSL) - sometimes works better on Railway
   const transporter = nodemailer.createTransport({
-    host: 'smtp-relay.brevo.com',
-    port: 587,
-    secure: false,
+    host: process.env.SMTP_HOST || 'smtp.gmail.com',
+    port: 465,
+    secure: true, // use SSL
     auth: {
-      user: process.env.BREVO_SMTP_USER || process.env.SMTP_USER,
-      pass: process.env.BREVO_API_KEY || process.env.SMTP_PASS,
+      user: process.env.SMTP_USER,
+      pass: process.env.SMTP_PASS,
     },
   });
 
