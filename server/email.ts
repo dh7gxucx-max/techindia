@@ -24,8 +24,9 @@ interface OrderEmailData {
 }
 
 export async function sendOrderEmail(orderData: OrderEmailData) {
-  // Elastic Email SMTP on port 2525 - works better on Railway
-  const transporter = nodemailer.createTransport({
+  console.log("sendOrderEmail: Starting...");
+
+  const smtpConfig = {
     host: process.env.SMTP_HOST || 'smtp.elasticemail.com',
     port: parseInt(process.env.SMTP_PORT || '2525'),
     secure: false, // use TLS
@@ -33,7 +34,17 @@ export async function sendOrderEmail(orderData: OrderEmailData) {
       user: process.env.SMTP_USER,
       pass: process.env.SMTP_PASS,
     },
+  };
+
+  console.log("sendOrderEmail: Creating transporter with config:", {
+    ...smtpConfig,
+    auth: { user: smtpConfig.auth.user, pass: smtpConfig.auth.pass ? '***' : 'NOT SET' }
   });
+
+  // Elastic Email SMTP on port 2525 - works better on Railway
+  const transporter = nodemailer.createTransport(smtpConfig);
+
+  console.log("sendOrderEmail: Verifying SMTP connection...");
 
   const finalTotal = orderData.total + orderData.shipping + orderData.tax;
 
@@ -142,5 +153,14 @@ export async function sendOrderEmail(orderData: OrderEmailData) {
     html: htmlContent,
   };
 
-  await transporter.sendMail(mailOptions);
+  console.log("sendOrderEmail: Sending email from", mailOptions.from, "to", mailOptions.to);
+
+  try {
+    const result = await transporter.sendMail(mailOptions);
+    console.log("sendOrderEmail: Email sent successfully!", result.messageId);
+    return result;
+  } catch (error) {
+    console.error("sendOrderEmail: Failed to send email:", error);
+    throw error;
+  }
 }

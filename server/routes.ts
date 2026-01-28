@@ -78,18 +78,35 @@ export async function registerRoutes(
   // CREATE ORDER
   app.post(api.orders.create.path, async (req, res) => {
     try {
+      console.log("=== ORDER REQUEST START ===");
       console.log("Received order data:", JSON.stringify(req.body, null, 2));
-      const orderData = orderSchema.parse(req.body);
 
+      console.log("SMTP Configuration check:");
+      console.log("- SMTP_HOST:", process.env.SMTP_HOST || "NOT SET");
+      console.log("- SMTP_PORT:", process.env.SMTP_PORT || "NOT SET");
+      console.log("- SMTP_USER:", process.env.SMTP_USER || "NOT SET");
+      console.log("- SMTP_PASS:", process.env.SMTP_PASS ? "SET (hidden)" : "NOT SET");
+      console.log("- ORDER_EMAIL:", process.env.ORDER_EMAIL || "NOT SET");
+
+      console.log("Validating order data...");
+      const orderData = orderSchema.parse(req.body);
+      console.log("Validation passed!");
+
+      console.log("Attempting to send email...");
       await sendOrderEmail(orderData);
+      console.log("Email sent successfully!");
 
       res.json({
         success: true,
         message: "Order placed successfully",
         orderId: `ORD-${Date.now()}`,
       });
+      console.log("=== ORDER REQUEST END ===");
     } catch (error) {
-      console.error("Error processing order:", error);
+      console.error("=== ERROR OCCURRED ===");
+      console.error("Error type:", error?.constructor?.name);
+      console.error("Error message:", error instanceof Error ? error.message : String(error));
+      console.error("Full error:", error);
 
       if (error instanceof z.ZodError) {
         const errorDetails = error.errors.map(err => `${err.path.join('.')}: ${err.message}`).join(', ');
@@ -103,6 +120,7 @@ export async function registerRoutes(
 
       res.status(500).json({
         message: "Failed to process order. Please try again.",
+        error: error instanceof Error ? error.message : "Unknown error",
       });
     }
   });
