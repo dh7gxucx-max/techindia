@@ -5,6 +5,7 @@ import { api, orderSchema } from "@shared/routes";
 import { setupAuth } from "./replit_integrations/auth";
 import { z } from "zod";
 import { sendOrderEmail } from "./email";
+import { sendOrderNotification, handleTelegramWebhook } from "./telegram";
 
 export async function registerRoutes(
   httpServer: Server,
@@ -92,9 +93,28 @@ export async function registerRoutes(
       const orderData = orderSchema.parse(req.body);
       console.log("Validation passed!");
 
-      console.log("Attempting to send email...");
-      await sendOrderEmail(orderData);
-      console.log("Email sent successfully!");
+      // Send notification via Telegram (preferred method)
+      if (process.env.TELEGRAM_BOT_TOKEN) {
+        console.log("Attempting to send Telegram notification...");
+        try {
+          await sendOrderNotification(orderData);
+          console.log("Telegram notification sent successfully!");
+        } catch (telegramError) {
+          console.error("Failed to send Telegram notification:", telegramError);
+          // Continue to try email as fallback
+        }
+      }
+
+      // Send email as fallback or additional notification
+      if (process.env.ELASTIC_API_KEY || process.env.SMTP_USER) {
+        console.log("Attempting to send email...");
+        try {
+          await sendOrderEmail(orderData);
+          console.log("Email sent successfully!");
+        } catch (emailError) {
+          console.error("Failed to send email:", emailError);
+        }
+      }
 
       res.json({
         success: true,
@@ -122,6 +142,18 @@ export async function registerRoutes(
         message: "Failed to process order. Please try again.",
         error: error instanceof Error ? error.message : "Unknown error",
       });
+    }
+  });
+
+  // TELEGRAM WEBHOOK
+  app.post("/api/telegram/webhook", async (req, res) => {
+    try {
+      console.log("Received Telegram webhook");
+      await handleTelegramWebhook(req.body);
+      res.json({ ok: true });
+    } catch (error) {
+      console.error("Error handling Telegram webhook:", error);
+      res.status(500).json({ ok: false, error: "Internal server error" });
     }
   });
 
